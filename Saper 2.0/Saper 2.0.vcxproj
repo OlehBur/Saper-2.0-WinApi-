@@ -153,9 +153,12 @@
     <None Include="assets\cursors\shovel_cursor.cur" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\bmp\sound.bmp" />
+    <Image Include="assets\bmp\unsound.bmp" />
     <Image Include="assets\bmp\flag.bmp" />
     <Image Include="assets\bmp\heart.bmp" />
     <Image Include="assets\bmp\lost_heart.bmp" />
+    <Image Include="unflag.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -10,7 +10,7 @@
 
 int columnsArena = 11,
 rowsArena = 6,
-levelOfGame = 2,
+levelOfGame = 1,
 currentScore = 0,
 currentTime = 0,
 currentRemainingLifes = 0;

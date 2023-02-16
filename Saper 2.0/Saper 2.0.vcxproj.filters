@@ -56,5 +56,14 @@
     <Image Include="assets\bmp\flag.bmp">
       <Filter>Resource Files\bmp</Filter>
     </Image>
+    <Image Include="assets\bmp\unsound.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </Image>
+    <Image Include="assets\bmp\sound.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </Image>
+    <Image Include="unflag.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </Image>
   </ItemGroup>
 </Project>

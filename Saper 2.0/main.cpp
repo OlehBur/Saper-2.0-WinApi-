@@ -52,9 +52,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 	static HDC memBit;
 	static BITMAP bitmap;
-	static HBITMAP heartBmp;
+	static HBITMAP heartBmp, flagBmp, soundBmp;
 	static std::string scoreStr, timeStr;
-	static RECT currentBlockRect, scoreRect, timeRect, startTextRect, heartBarRect;
+	static RECT currentBlockRect, scoreRect, timeRect, startTextRect, infoIconsRect/*heartBarRect*/;
 	static HBRUSH standartBrush, grassBrush, groundBrush, bombBrush;
 	static HPEN standartPen, grassPen, groundPen, bombPen;
 	static HFONT standartFont, numbersFont, gameInfoFont;
@@ -65,18 +65,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	switch (message) {
 	case WM_CREATE:
 		WndMenu(hWnd);
+
+
 		heartBmp = (HBITMAP)LoadImage(NULL, L"assets/bmp/heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 		if (heartBmp == NULL)
 		{
-			MessageBox(hWnd, TEXT("Файл не знайдено"), TEXT("Завантаження бітмапу"),
+			MessageBox(hWnd, TEXT("Файл не знайдено"), TEXT("Завантаження бітмапу heartBmp"),
 				MB_OK | MB_ICONHAND);
 			DestroyWindow(hWnd);
 			return 1;
 		}
+		flagBmp = (HBITMAP)LoadImage(NULL, L"assets/bmp/flag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+		if (flagBmp == NULL)
+		{
+			MessageBox(hWnd, TEXT("Файл не знайдено"), TEXT("Завантаження бітмапу flagBmp"),
+				MB_OK | MB_ICONHAND);
+			DestroyWindow(hWnd);
+			return 1;
+		}
+		soundBmp = (HBITMAP)LoadImage(NULL, L"assets/bmp/sound.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+		if (soundBmp == NULL)
+		{
+			MessageBox(hWnd, TEXT("Файл не знайдено"), TEXT("Завантаження бітмапу soundBmp"),
+				MB_OK | MB_ICONHAND);
+			DestroyWindow(hWnd);
+			return 1;
+		}
+
 		GetObject(heartBmp, sizeof(bitmap), &bitmap);
 		hdc = GetDC(hWnd);
 		memBit = CreateCompatibleDC(hdc);
 		ReleaseDC(hWnd, hdc);
+
+
 		InvalidateRect(hWnd, NULL, true);
 		break;
 
@@ -111,14 +132,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			DiggingGrassToCoords(cursorPosition, blockSide);
 			if (currentRemainingLifes == 0) {
 				KillTimer(hWnd, 1);
-				InvalidateRect(hWnd, &heartBarRect, true);//for crack last heart
+				InvalidateRect(hWnd, &infoIconsRect, true);//for crack last heart
 				DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hWnd, GameOverDialog);
 			}
 			InvalidateRect(hWnd, &arena, true); //InvalidateRect(hWnd, &currentBlockRect, false);
 			InvalidateRect(hWnd, &scoreRect, true);
-			InvalidateRect(hWnd, &heartBarRect, true);
+			InvalidateRect(hWnd, &infoIconsRect, true);
 			//InvalidateRect(hWnd, NULL, true);
 		}
+		RECT soundR; 
+		soundR.left = wndWidth / 2 + bitmap.bmWidth * 3; soundR.top = arena.top / 2 - bitmap.bmHeight / 2; soundR.right = bitmap.bmWidth, soundR.bottom = bitmap.bmHeight;
+		if (IsPointInRect(cursorPosition, soundR)) {
+			soundOn = !soundOn;
+			//music off
+			InvalidateRect(hWnd, &infoIconsRect, true);
+		}
+
 		break;
 
 	case WM_SIZE:
@@ -145,10 +174,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		startTextRect.top = arena.top + (arena.bottom - arena.top) / 3;
 		startTextRect.bottom = startTextRect.top + (arena.bottom - arena.top) / 3;
 
-		heartBarRect.left = wndWidth / 2 - bitmap.bmWidth * 1.5;
-		heartBarRect.top = arena.top / 2 - bitmap.bmHeight / 2;
-		heartBarRect.right = heartBarRect.left + bitmap.bmWidth*3;
-		heartBarRect.bottom = heartBarRect.top + bitmap.bmHeight;
+		infoIconsRect.left = wndWidth / 2 - bitmap.bmWidth * 4;
+		infoIconsRect.top = arena.top / 2 - bitmap.bmHeight / 2;
+		infoIconsRect.right = wndWidth / 2 + bitmap.bmWidth * 4;
+		infoIconsRect.bottom = infoIconsRect.top + bitmap.bmHeight;
 
 		break;
 
@@ -183,24 +212,50 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		DrawText(hdc, std::wstring(timeStr.begin(), timeStr.end()).c_str(),
 			timeStr.length(), &timeRect, DT_RIGHT);
 
-					//heart bar
-		if (extraLifesOn && !firstStart) {
-			for (int i = 1; i <= levelOfGame; i++) {
-				heartBmp = (i<=(levelOfGame-currentRemainingLifes)) ? //which heart crack
-					(HBITMAP)LoadImage(NULL, L"assets/bmp/lost_heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION):
-					(HBITMAP)LoadImage(NULL, L"assets/bmp/heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+								//bmp`s
+		memBit = CreateCompatibleDC(hdc);
+		if (!firstStart) {
+			SelectObject(hdc, CreateSolidBrush(RGB(0, 153, 0)));
+			//heart bar
+			if (extraLifesOn) {
+				for (int i = 1; i <= levelOfGame; i++) {
+					heartBmp = (i <= (levelOfGame - currentRemainingLifes)) ? //which heart crack
+						(HBITMAP)LoadImage(NULL, L"assets/bmp/lost_heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION) :
+						(HBITMAP)LoadImage(NULL, L"assets/bmp/heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 
-				SelectObject(hdc, CreateSolidBrush(RGB(0, 153, 0)));
-				SelectObject(memBit, heartBmp);
-				heartCentering = (levelOfGame == 3) ? bitmap.bmWidth * 1.5 : (levelOfGame == 2) ? bitmap.bmWidth : bitmap.bmWidth * .5/*(levelOfGame==1)?*/;
-				BitBlt(hdc,
-					wndWidth / 2 + heartCentering - bitmap.bmWidth * i,
-					arena.top / 2 - bitmap.bmHeight / 2, 
-					bitmap.bmWidth, 
-					bitmap.bmHeight,
-					memBit, 0, 0, MERGECOPY);
-			}
-			//TransparentBlt(hdc, blockSide, blockSide, bitmap.bmWidth, bitmap.bmHeight, memBit, 0, 0, bitmap.bmWidth, bitmap.bmHeight, RGB(255, 255, 255));
+					
+					SelectObject(memBit, heartBmp);
+					heartCentering = (levelOfGame == 3) ? bitmap.bmWidth * 1.5 : (levelOfGame == 2) ? bitmap.bmWidth : bitmap.bmWidth * .5/*(levelOfGame==1)?*/;
+					BitBlt(hdc,
+						wndWidth / 2 + heartCentering - bitmap.bmWidth * i,
+						arena.top / 2 - bitmap.bmHeight / 2,
+						bitmap.bmWidth,
+						bitmap.bmHeight,
+						memBit, 0, 0, MERGECOPY);
+				}
+				//TransparentBlt(hdc, blockSide, blockSide, bitmap.bmWidth, bitmap.bmHeight, memBit, 0, 0, bitmap.bmWidth, bitmap.bmHeight, RGB(255, 255, 255));
+			}//flag Bar
+			flagBmp = (flagsOn) ?
+				(HBITMAP)LoadImage(NULL, L"assets/bmp/flag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION) :
+				(HBITMAP)LoadImage(NULL, L"assets/bmp/unflag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+			SelectObject(memBit, flagBmp);
+			BitBlt(hdc,
+				wndWidth / 2 - bitmap.bmWidth * 4,
+				arena.top / 2 - bitmap.bmHeight / 2,
+				bitmap.bmWidth,
+				bitmap.bmHeight,
+				memBit, 0, 0, MERGECOPY);
+			//Sound Bar
+			soundBmp = (soundOn) ?
+				(HBITMAP)LoadImage(NULL, L"assets/bmp/sound.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION) :
+				(HBITMAP)LoadImage(NULL, L"assets/bmp/unsound.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+			SelectObject(memBit, soundBmp);
+			BitBlt(hdc,
+				wndWidth / 2 + bitmap.bmWidth * 3,
+				arena.top / 2 - bitmap.bmHeight / 2,
+				bitmap.bmWidth,
+				bitmap.bmHeight,
+				memBit, 0, 0, MERGECOPY);
 		}
 		//FillRect(hdc, &heartBarRect, (HBRUSH)CreateSolidBrush(RGB(192, 192, 192)));
 
@@ -230,7 +285,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 					SetBkColor(hdc, RGB(255, 178, 153));
 				}
-
+				SelectObject(hdc, grassBrush);
+				SelectObject(hdc, grassPen);
 				if (arenaGrass[i][j]) {
 					SelectObject(hdc, grassBrush);
 					SelectObject(hdc, grassPen);
@@ -239,6 +295,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 						arena.top + blockSide * j,
 						arena.left + blockSide * i + blockSide,
 						arena.top + blockSide * j + blockSide);
+					SelectObject(hdc, groundBrush);
+					SelectObject(hdc, groundPen);
 				}
 				else {
 					SelectObject(hdc, groundBrush);
@@ -248,6 +306,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 						arena.top + blockSide * j,
 						arena.left + blockSide * i + blockSide,
 						arena.top + blockSide * j + blockSide);
+					SelectObject(hdc, bombBrush);
+					SelectObject(hdc, bombPen);
 
 					if (arenaGround[i][j] == 10) {
 						SelectObject(hdc, bombBrush);
@@ -301,9 +361,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		DeleteObject(groundBrush);
 
 		DeleteObject(heartBmp);
+		DeleteObject(flagBmp);
+		DeleteObject(soundBmp);
+		DeleteObject(memBit);
 		
 		EndPaint(hWnd, &lp);	
-
+		//DeleteDC(hdc);
 		break;
 
 	case WM_TIMER:
@@ -526,7 +589,7 @@ void GenerateBombs(POINT point, int side) {
 
 	for (int i = 0; i < columnsArena; i++)
 		for (int j = 0; j < rowsArena; j++)
-			if (rand() % 6-levelOfGame == 0)
+			if (rand() % int(6-levelOfGame*1.1) == 0)
 				arenaGround[i][j] = 10;
 
 	for (int k = col - 1; k <= col + 1; k++)//start void area
