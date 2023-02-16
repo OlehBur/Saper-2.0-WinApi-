@@ -1,0 +1,157 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Ukrainian (Ukraine) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_UKR)
+LANGUAGE LANG_UKRAINIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG1 DIALOGEX 0, 0, 156, 93
+STYLE DS_SETFONT | DS_CENTER | WS_POPUP | WS_BORDER | WS_SYSMENU
+FONT 12, "Comic Sans MS", 700, 1, 0xCC
+BEGIN
+    DEFPUSHBUTTON   "Restart",IDOK,9,79,136,10
+    PUSHBUTTON      "Continue",IDCANCEL,83,79,61,10,NOT WS_VISIBLE
+    GROUPBOX        "Level of difficulty",IDC_STATIC,9,8,63,62
+    CONTROL         "easy",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,24,21,31,10
+    CONTROL         "medium",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,24,37,40,10
+    CONTROL         "hard",IDC_RADIO3,"Button",BS_AUTORADIOBUTTON,24,53,31,10
+    CONTROL         "sound",IDC_CHECK_SOUND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,89,21,35,10
+    CONTROL         "extra lifes",IDC_CHECK_LIFES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,89,37,48,10
+    CONTROL         "flags",IDC_CHECK_FLAGS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,89,53,31,10
+    GROUPBOX        "Other",IDC_STATIC,83,8,61,63
+END
+
+IDD_DIALOG2 DIALOGEX 0, 0, 94, 54
+STYLE DS_SETFONT | DS_CENTER | WS_POPUP | WS_BORDER | WS_SYSMENU
+FONT 16, "Comic Sans MS", 700, 0, 0xCC
+BEGIN
+    DEFPUSHBUTTON   "Restart",IDOK,0,43,46,11
+    PUSHBUTTON      "Quit the game",IDCANCEL,46,43,48,11
+    LTEXT           "Score:",IDC_SCORE,6,26,38,8,0,WS_EX_TRANSPARENT
+    RTEXT           "Time:",IDC_TIME,48,26,40,8,0,WS_EX_TRANSPARENT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 149
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 86
+    END
+
+    IDD_DIALOG2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 91
+        TOPMARGIN, 7
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG2 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_HEART_BMP           BITMAP                  "assets//bmp//heart.bmp"
+
+IDB_LOST_HEART_BMP      BITMAP                  "assets//bmp//lost_heart.bmp"
+
+IDB_FLAG             BITMAP                  "assets//bmp//flag.bmp"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Cursor
+//
+
+IDC_SHOVEL_CURSOR       CURSOR                  "assets\\cursors\\shovel_cursor.cur"
+
+IDC_FLAG_CURSOR         CURSOR                  "assets\\cursors\\flag_cursor.cur"
+
+#endif    // Ukrainian (Ukraine) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
