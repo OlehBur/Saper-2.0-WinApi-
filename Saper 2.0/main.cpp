@@ -47,60 +47,43 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, int cmdShow) {
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	static HDC hdc, memBit;
-	static POINT cursorPosition;
-	static PAINTSTRUCT lp;
+	HDC hdc; 
+	static HDC memBit;
+	POINT cursorPosition;
+	PAINTSTRUCT lp;
+
+	static BITMAP bitmap;
+	HBITMAP heartBmp, flagBmp, soundBmp;
+
+	HBRUSH standartBrush, grassBrush, groundBrush, bombBrush, mainBackgrounfBrush;
+	HPEN standartPen, grassPen, groundPen, bombPen;
+	HFONT standartFont, numbersFont, gameInfoFont;
 
 	static RECT currentBlock, scoreRect, timeRect, startTextRect, infoIconsRect/*heartBarRect*/, flagRect, soundRect;
 	static int blockSide{ 0 },
 		wndWidth{ 0 }, wndHeight{ 0 },
 		heartCentering{ 0 };
-
-	static BITMAP bitmap;
-	static HBITMAP heartBmp, flagBmp, soundBmp;
-
-	static HBRUSH standartBrush, grassBrush, groundBrush, bombBrush;
-	static HPEN standartPen, grassPen, groundPen, bombPen;
-
-	static std::string scoreStr, timeStr;
-	static HFONT standartFont, numbersFont, gameInfoFont;
+    static std::string scoreStr, timeStr;
 
 	switch (message) {
 	case WM_CREATE:
 		WndMenu(hWnd);
 
-
 		heartBmp = (HBITMAP)LoadImage(NULL, L"assets/bmp/heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-		if (heartBmp == NULL)
-		{
-			MessageBox(hWnd, TEXT("Файл не знайдено"), TEXT("Завантаження бітмапу heartBmp"),
-				MB_OK | MB_ICONHAND);
-			DestroyWindow(hWnd);
-			return 1;
-		}
 		flagBmp = (HBITMAP)LoadImage(NULL, L"assets/bmp/flag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-		if (flagBmp == NULL)
-		{
-			MessageBox(hWnd, TEXT("Файл не знайдено"), TEXT("Завантаження бітмапу flagBmp"),
-				MB_OK | MB_ICONHAND);
-			DestroyWindow(hWnd);
-			return 1;
-		}
 		soundBmp = (HBITMAP)LoadImage(NULL, L"assets/bmp/sound.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-		if (soundBmp == NULL)
+		/*if (soundBmp == NULL)
 		{
 			MessageBox(hWnd, TEXT("Файл не знайдено"), TEXT("Завантаження бітмапу soundBmp"),
 				MB_OK | MB_ICONHAND);
 			DestroyWindow(hWnd);
 			return 1;
-		}
+		}*/
 
 		GetObject(heartBmp, sizeof(bitmap), &bitmap);
 		hdc = GetDC(hWnd);
 		memBit = CreateCompatibleDC(hdc);
 		ReleaseDC(hWnd, hdc);
-
-
 
 		InvalidateRect(hWnd, NULL, true);
 		break;
@@ -167,6 +150,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			DiggingGrassToCoords(cursorPosition, blockSide);
 			if (currentRemainingLifes == 0) {
 				KillTimer(hWnd, 1);
+				InvalidateRect(hWnd, &arena, true);
 				InvalidateRect(hWnd, &infoIconsRect, true);//for crack last heart
 				DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hWnd, GameOverDialog);
 			}
@@ -190,6 +174,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		wndHeight = HIWORD(lParam);
 		wndWidth = LOWORD(lParam);
 		blockSide = wndHeight / (sidesArena[levelOfGame][1] + 2); // - wndHeight / 1.15;
+
 		arena.right = wndWidth - (wndWidth - blockSide * sidesArena[levelOfGame][0]) / 2;
 		arena.bottom = blockSide + blockSide * sidesArena[levelOfGame][1];
 		arena.left = (wndWidth - blockSide * sidesArena[levelOfGame][0]) / 2;
@@ -225,39 +210,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &lp);
 
-		//fonts
-		numbersFont = CreateFont(blockSide / .9, blockSide / 2.5, 0, 0, FW_DONTCARE,
-			0, 0, 0, ANSI_CHARSET,
-			OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-			DRAFT_QUALITY, VARIABLE_PITCH,
-			TEXT("Comic Sans MS"));
+					//info
+		scoreStr = "Score: " + std::to_string(currentScore);
+		timeStr = "Time: " + std::to_string(currentTime);
+
 		gameInfoFont = CreateFont(blockSide / 3, blockSide / 8, 0, 0, FW_DONTCARE,
 			0, 0, 0, ANSI_CHARSET,
 			OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
 			DRAFT_QUALITY, VARIABLE_PITCH,
 			TEXT("Comic Sans MS"));
 
-		/*SelectObject(hdc, gameInfoFont);*/
-
-
-					//info
-		scoreStr = "Score: " + std::to_string(currentScore);
-		timeStr = "Time: " + std::to_string(currentTime);
-
 		standartFont = (HFONT)SelectObject(hdc, gameInfoFont);
+		standartPen = (HPEN)GetStockObject(WHITE_BRUSH);
+		standartBrush = (HBRUSH)GetStockObject(DC_PEN);
+
+		SelectObject(hdc, gameInfoFont);
 		SetTextColor(hdc, RGB(0, 0, 0));
-		SetBkColor(hdc, RGB(0, 153, 0));
+		SetBkMode(hdc, TRANSPARENT);
+
 		DrawText(hdc, std::wstring(scoreStr.begin(), scoreStr.end()).c_str(),
 			scoreStr.length(), &scoreRect, DT_LEFT);
 		DrawText(hdc, std::wstring(timeStr.begin(), timeStr.end()).c_str(),
 			timeStr.length(), &timeRect, DT_RIGHT);
 
-		//if (!isArenaReload) {//чот не воркає
+		SelectObject(hdc, standartFont);
+		DeleteObject(gameInfoFont);
 
 			//bmp`s
-			memBit = CreateCompatibleDC(hdc);
+			mainBackgrounfBrush = CreateSolidBrush(RGB(0, 153, 0));
+			//memBit = CreateCompatibleDC(hdc);
 			if (!firstStart) {
-				SelectObject(hdc, CreateSolidBrush(RGB(0, 153, 0)));
+				SelectObject(hdc, mainBackgrounfBrush);
 				//heart bar
 				if (extraLifesOn) {
 					for (int i = 1; i <= levelOfGame; i++) {
@@ -274,9 +257,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							bitmap.bmWidth,
 							bitmap.bmHeight,
 							memBit, 0, 0, MERGECOPY);
+
+						DeleteObject(heartBmp);
 					}
-					//TransparentBlt(hdc, blockSide, blockSide, bitmap.bmWidth, bitmap.bmHeight, memBit, 0, 0, bitmap.bmWidth, bitmap.bmHeight, RGB(255, 255, 255));
-				}//flag Bar
+				}
+				
+				//flag Bar
 				flagBmp = (flagsOn) ?
 					(HBITMAP)LoadImage(NULL, L"assets/bmp/flag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION) :
 					(HBITMAP)LoadImage(NULL, L"assets/bmp/unflag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
@@ -287,6 +273,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 					bitmap.bmWidth,
 					bitmap.bmHeight,
 					memBit, 0, 0, MERGECOPY);
+				
 				//Sound Bar
 				soundBmp = (soundOn) ?
 					(HBITMAP)LoadImage(NULL, L"assets/bmp/sound.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION) :
@@ -298,16 +285,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 					bitmap.bmWidth,
 					bitmap.bmHeight,
 					memBit, 0, 0, MERGECOPY);
+				
+				DeleteObject(flagBmp);
+				DeleteObject(soundBmp);
 			}
-			//FillRect(hdc, &heartBarRect, (HBRUSH)CreateSolidBrush(RGB(192, 192, 192)));
+			//DeleteObject(memBit);
+			SelectObject(hdc, standartBrush);
+			DeleteObject(mainBackgrounfBrush);
 
 					//arena draw
 			Rectangle(hdc, arena.left, arena.top, arena.right, arena.bottom);
-
-			bombBrush = CreateSolidBrush(RGB(192, 192, 192));
-			standartBrush = (HBRUSH)SelectObject(hdc, bombBrush);
-			bombPen = CreatePen(BS_SOLID, 4, RGB(32, 32, 32));
-			standartPen = (HPEN)SelectObject(hdc, bombPen);
 
 			for (int i = 0; i < sidesArena[levelOfGame][0]; i++)
 				for (int j = 0; j < sidesArena[levelOfGame][1]; j++) {
@@ -316,52 +303,70 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 						grassPen = CreatePen(BS_SOLID, 1, RGB(0, 255, 0));
 						groundBrush = CreateSolidBrush(RGB(255, 204, 102));
 						groundPen = CreatePen(BS_SOLID, 1, RGB(255, 204, 102));
-
-						SetBkColor(hdc, RGB(255, 204, 102));
 					}
 					else {
 						grassBrush = CreateSolidBrush(RGB(0, 204, 0));
 						grassPen = CreatePen(BS_SOLID, 1, RGB(0, 204, 0));
 						groundBrush = CreateSolidBrush(RGB(255, 178, 153));
 						groundPen = CreatePen(BS_SOLID, 1, RGB(255, 178, 153));
-
-						SetBkColor(hdc, RGB(255, 178, 153));
 					}
-					SelectObject(hdc, grassBrush);
-					SelectObject(hdc, grassPen);
-					if (arenaGrass[i][j]) {
-						SelectObject(hdc, grassBrush);
+
+					if (arenaGrass[i][j]) {//grass
 						SelectObject(hdc, grassPen);
+						SelectObject(hdc, grassBrush);
+
 						Rectangle(hdc,
 							arena.left + blockSide * i,
 							arena.top + blockSide * j,
 							arena.left + blockSide * i + blockSide,
 							arena.top + blockSide * j + blockSide);
-						SelectObject(hdc, groundBrush);
-						SelectObject(hdc, groundPen);
+
+						SelectObject(hdc, standartPen);
+						DeleteObject(grassPen);
+						SelectObject(hdc, standartBrush);
+						DeleteObject(grassBrush);
 					}
 					else {
-						SelectObject(hdc, groundBrush);
+						//ground
 						SelectObject(hdc, groundPen);
+						SelectObject(hdc, groundBrush);
 
 						Rectangle(hdc, arena.left + blockSide * i,
 							arena.top + blockSide * j,
 							arena.left + blockSide * i + blockSide,
 							arena.top + blockSide * j + blockSide);
-						SelectObject(hdc, bombBrush);
-						SelectObject(hdc, bombPen);
+
+						SelectObject(hdc, standartBrush);
+						DeleteObject(groundBrush);
+						SelectObject(hdc, standartPen);
+						DeleteObject(groundPen);
 
 						if (arenaGround[i][j] == 10) {
-							SelectObject(hdc, bombBrush);
+							bombBrush = CreateSolidBrush(RGB(192, 192, 192));	
+							bombPen = CreatePen(BS_SOLID, 4, RGB(32, 32, 32));
 							SelectObject(hdc, bombPen);
+							SelectObject(hdc, bombBrush);
+
 							Ellipse(hdc,
 								arena.left + blockSide * i + 40,
 								arena.top + blockSide * j + 40,
 								arena.left + blockSide * i + blockSide - 40,
 								arena.top + blockSide * j + blockSide - 40);
+
+							SelectObject(hdc, standartPen);
+							DeleteObject(bombPen);
+							SelectObject(hdc, standartBrush);
+							DeleteObject(bombBrush);
 						}
+
 						else if (arenaGround[i][j] > 0) {//draw count of bombs around
+							numbersFont = CreateFont(blockSide / .9, blockSide / 2.5, 0, 0, FW_DONTCARE,
+								0, 0, 0, ANSI_CHARSET,
+								OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
+								DRAFT_QUALITY, VARIABLE_PITCH,
+								TEXT("Comic Sans MS"));
 							SelectObject(hdc, numbersFont);
+							SetBkMode(hdc, TRANSPARENT);
 							SetTextColor(hdc, RGB(30 * arenaGround[i][j], 0, 15 * arenaGround[i][j]));
 
 							currentBlock.left = arena.left + blockSide * i;
@@ -373,41 +378,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							DrawText(hdc,
 								std::wstring(countOfBombs.begin(), countOfBombs.end()).c_str(), //convert str to lpcwstr
 								1, &currentBlock, DT_CENTER);
+							SelectObject(hdc, standartFont);
+							DeleteObject(numbersFont);
 						}
 
 					}
 				}
 
 			if (firstStart) {
+				numbersFont = CreateFont(blockSide / .9, blockSide / 2.5, 0, 0, FW_DONTCARE,
+					0, 0, 0, ANSI_CHARSET,
+					OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
+					DRAFT_QUALITY, VARIABLE_PITCH,
+					TEXT("Comic Sans MS"));
 				SelectObject(hdc, numbersFont);
 				SetBkMode(hdc, TRANSPARENT);
 				SetTextColor(hdc, RGB(0, 0, 0));
 				DrawText(hdc, TEXT("Click on the arena to start."),
 					29, &startTextRect, DT_CENTER);
-
+				SelectObject(hdc, standartFont);
+				DeleteObject(numbersFont);
 			}
 
-			SelectObject(hdc, standartFont);
-			DeleteObject(gameInfoFont);
-			DeleteObject(numbersFont);
-
-			SelectObject(hdc, standartPen);
-			DeleteObject(bombPen);
-			DeleteObject(grassPen);
-			DeleteObject(groundPen);
-
-			SelectObject(hdc, standartBrush);
-			DeleteObject(bombBrush);
-			DeleteObject(grassBrush);
-			DeleteObject(groundBrush);
-
-			DeleteObject(heartBmp);
-			DeleteObject(flagBmp);
-			DeleteObject(soundBmp);
-			DeleteObject(memBit);
-		//}
 		EndPaint(hWnd, &lp);	
-		//DeleteDC(hdc);
 		break;
 
 	case WM_TIMER:
@@ -473,24 +466,30 @@ INT_PTR CALLBACK SettingsDialog(HWND hWndDlg, UINT messageDlg, WPARAM wParam, LP
 		}
 
 		break;
+	//case WM_CTLCOLORDLG:
+	//	return (INT_PTR)CreateSolidBrush(RGB(0, 255, 0));
+	//	break;
+	//case WM_DESTROY:
+
+	//	break;
 
 	}
 	return INT_PTR(false);
 }
 
 INT_PTR CALLBACK GameOverDialog(HWND hWndGO, UINT message, WPARAM wParam, LPARAM lParam) {
-	HDC hdcDlg;
+	static HDC hdcDlg;
+	static PAINTSTRUCT ps;
+	static HBRUSH background;
 	static std::string finalScore, finalTime;
-	const HFONT tittleFont = CreateFont(40, 15, 0, 0, FW_DONTCARE,
-		0, 0, 0, ANSI_CHARSET,
-		OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-		DRAFT_QUALITY, VARIABLE_PITCH,
-		TEXT("Comic Sans MS"));
+	static HFONT tittleFont;
 	static RECT dialogRect, tittleRect;
 	static int widthDlg, heightDlg;
 
 	switch (message) {
 	case WM_INITDIALOG:
+		background= CreateSolidBrush(RGB(0, 255, 0));
+
 		finalScore = "Score: " + std::to_string(currentScore);
 		finalTime = "Time: " + std::to_string(currentTime);
 		SetDlgItemText(hWndGO, IDC_SCORE, std::wstring(finalScore.begin(), finalScore.end()).c_str());
@@ -521,21 +520,29 @@ INT_PTR CALLBACK GameOverDialog(HWND hWndGO, UINT message, WPARAM wParam, LPARAM
 		}
 			break;
 	case WM_CTLCOLORDLG:
-		return (INT_PTR)CreateSolidBrush(RGB(0, 255, 0));
+		return (INT_PTR)background;//CreateSolidBrush(RGB(0, 255, 0));
 		break;
 
 	case WM_PAINT:
-		PAINTSTRUCT ps;
+		tittleFont = CreateFont(40, 15, 0, 0, FW_DONTCARE,
+			0, 0, 0, ANSI_CHARSET,
+			OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
+			DRAFT_QUALITY, VARIABLE_PITCH,
+			TEXT("Comic Sans MS"));
+
 		hdcDlg = BeginPaint(hWndGO, &ps);
-
 		//FillRect(hdcDlg, &dialogRect, (HBRUSH)CreateSolidBrush(RGB(0, 255, 0)));
-
 		SelectObject(hdcDlg, tittleFont);
 		SetBkMode(hdcDlg, TRANSPARENT);
 		SetTextColor(hdcDlg, RGB(0, 0, 0));
 		DrawText(hdcDlg, (currentRemainingLifes) ? L"You Won!!!" : L"You Lost..", 11, &tittleRect, DT_CENTER);
 
 		BeginPaint(hWndGO, &ps);
+
+		DeleteObject(tittleFont);
+		break;
+	case WM_DESTROY:
+		DeleteObject(background);
 		break;
 	}
 	return INT_PTR(false);
@@ -573,21 +580,6 @@ POINT GetIndexGrassBlockClicked(POINT point, int side) {
 		}
 	return POINT{ -1, -1 };
 }
-
-//RECT GetRectOfClickedBlock(POINT point, int side) {
-//	RECT currentBlock;
-//
-//	for (int i = 0; i < columnsArena; i++)
-//		for (int j = 0; j < rowsArena; j++) {
-//			currentBlock.left = arena.left + side * i;
-//			currentBlock.right = arena.left + side * i + side;
-//			currentBlock.top = arena.top + side * j;
-//			currentBlock.bottom = arena.top + side * j + side;
-//			if (IsPointInRect(point, currentBlock))
-//				return currentBlock;
-//		}
-//	//return RECT{};
-//}
 
 void DiggingGrassToCoords(POINT point, int side) {
 	int i = GetIndexGrassBlockClicked(point, side).x,
@@ -659,9 +651,6 @@ void RestartGame() {
 	firstStart = true;
 	//isArenaReload = false;
 
-	//std::vector <std::vector<bool>> arenaGrass(sidesArena[levelOfGame][0], std::vector <bool>(sidesArena[levelOfGame][1], true)); //2d array in vector (vector array of booleans, with vectors of booleans inside)
-	//std::vector <std::vector<int>> arenaGround(sidesArena[levelOfGame][0], std::vector <int>(sidesArena[levelOfGame][1], 0)); //2d array in vector (vector array of booleans, with vectors of booleans inside)
-	//
 	for (int i = 0; i < arenaGrass.size()-1/*sidesArena[levelOfGame][1]*/; i++) {
 		arenaGrass.at(i).clear();
 		arenaGround.at(i).clear();
