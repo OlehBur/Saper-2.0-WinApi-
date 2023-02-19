@@ -130,9 +130,9 @@ IDB_LOST_HEART_BMP      BITMAP                  "assets//bmp//lost_heart.bmp"
 
 IDB_FLAG                BITMAP                  "assets//bmp//flag.bmp"
 
-IDB_BITMAP1             BITMAP                  "assets//bmp//sound.bmp"
+IDB_SOUND             BITMAP                  "assets//bmp//sound.bmp"
 
-IDB_BITMAP2             BITMAP                  "assets//bmp//unsound.bmp"
+IDB_UNSOUND             BITMAP                  "assets//bmp//unsound.bmp"
 
 
 /////////////////////////////////////////////////////////////////////////////
