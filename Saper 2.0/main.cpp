@@ -55,8 +55,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	static BITMAP bitmap;
 	HBITMAP heartBmp, flagBmp, soundBmp;
 
-	HBRUSH standartBrush, grassBrush, groundBrush, bombBrush, mainBackgrounfBrush;
-	HPEN standartPen, grassPen, groundPen, bombPen;
+	HBRUSH standartBrush, grassBrush, groundBrush, grassBrush1, groundBrush1, bombBrush, mainBackgrounfBrush;
+	HPEN standartPen, grassPen, groundPen, grassPen1, groundPen1, bombPen;
 	HFONT standartFont, numbersFont, gameInfoFont;
 
 	static RECT currentBlock, scoreRect, timeRect, startTextRect, infoIconsRect/*heartBarRect*/, flagRect, soundRect;
@@ -236,10 +236,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		SelectObject(hdc, standartFont);
 		DeleteObject(gameInfoFont);
 
-			//bmp`s
-			mainBackgrounfBrush = CreateSolidBrush(RGB(0, 153, 0));
+						//bmp`s
+			
 			//memBit = CreateCompatibleDC(hdc);
 			if (!firstStart) {
+				mainBackgrounfBrush = CreateSolidBrush(RGB(0, 153, 0));
 				SelectObject(hdc, mainBackgrounfBrush);
 				//heart bar
 				if (extraLifesOn) {
@@ -288,32 +289,43 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				
 				DeleteObject(flagBmp);
 				DeleteObject(soundBmp);
+				DeleteObject(mainBackgrounfBrush);
 			}
 			//DeleteObject(memBit);
 			SelectObject(hdc, standartBrush);
-			DeleteObject(mainBackgrounfBrush);
+			
 
 					//arena draw
 			Rectangle(hdc, arena.left, arena.top, arena.right, arena.bottom);
 
+			grassBrush = CreateSolidBrush(RGB(0, 255, 0));
+			grassPen = CreatePen(BS_SOLID, 1, RGB(0, 255, 0));
+			groundBrush = CreateSolidBrush(RGB(255, 204, 102));
+			groundPen = CreatePen(BS_SOLID, 1, RGB(255, 204, 102));
+			grassBrush1 = CreateSolidBrush(RGB(0, 204, 0));
+			grassPen1 = CreatePen(BS_SOLID, 1, RGB(0, 204, 0));
+			groundBrush1 = CreateSolidBrush(RGB(255, 178, 153));
+			groundPen1 = CreatePen(BS_SOLID, 1, RGB(255, 178, 153));
+			bombBrush = CreateSolidBrush(RGB(192, 192, 192));
+			bombPen = CreatePen(BS_SOLID, 4, RGB(32, 32, 32));
+
 			for (int i = 0; i < sidesArena[levelOfGame][0]; i++)
 				for (int j = 0; j < sidesArena[levelOfGame][1]; j++) {
-					if ((i + j) & 1) {//is even numb
-						grassBrush = CreateSolidBrush(RGB(0, 255, 0));
-						grassPen = CreatePen(BS_SOLID, 1, RGB(0, 255, 0));
-						groundBrush = CreateSolidBrush(RGB(255, 204, 102));
-						groundPen = CreatePen(BS_SOLID, 1, RGB(255, 204, 102));
-					}
-					else {
-						grassBrush = CreateSolidBrush(RGB(0, 204, 0));
-						grassPen = CreatePen(BS_SOLID, 1, RGB(0, 204, 0));
-						groundBrush = CreateSolidBrush(RGB(255, 178, 153));
-						groundPen = CreatePen(BS_SOLID, 1, RGB(255, 178, 153));
-					}
+					//if ((i + j) & 1) {//is even numb
+						
+					//}
+					/*else {
+					}*/
 
 					if (arenaGrass[i][j]) {//grass
-						SelectObject(hdc, grassPen);
-						SelectObject(hdc, grassBrush);
+						if ((i + j) & 1) {
+							SelectObject(hdc, grassPen);
+							SelectObject(hdc, grassBrush);
+						}
+						else {
+							SelectObject(hdc, grassPen1);
+							SelectObject(hdc, grassBrush1);
+						}
 
 						Rectangle(hdc,
 							arena.left + blockSide * i,
@@ -321,29 +333,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							arena.left + blockSide * i + blockSide,
 							arena.top + blockSide * j + blockSide);
 
-						SelectObject(hdc, standartPen);
-						DeleteObject(grassPen);
-						SelectObject(hdc, standartBrush);
-						DeleteObject(grassBrush);
+						//SelectObject(hdc, standartPen);
+						//DeleteObject(grassPen);
+						//SelectObject(hdc, standartBrush);
+						//DeleteObject(grassBrush);
 					}
-					else {
+				else {
 						//ground
-						SelectObject(hdc, groundPen);
-						SelectObject(hdc, groundBrush);
+						if ((i + j) & 1) {
+							SelectObject(hdc, groundPen);
+							SelectObject(hdc, groundBrush);
+						}
+						else {
+							SelectObject(hdc, groundPen1);
+							SelectObject(hdc, groundBrush1);
+						}
 
 						Rectangle(hdc, arena.left + blockSide * i,
 							arena.top + blockSide * j,
 							arena.left + blockSide * i + blockSide,
 							arena.top + blockSide * j + blockSide);
 
-						SelectObject(hdc, standartBrush);
+						/*SelectObject(hdc, standartBrush);
 						DeleteObject(groundBrush);
 						SelectObject(hdc, standartPen);
-						DeleteObject(groundPen);
+						DeleteObject(groundPen);*/
 
 						if (arenaGround[i][j] == 10) {
-							bombBrush = CreateSolidBrush(RGB(192, 192, 192));	
-							bombPen = CreatePen(BS_SOLID, 4, RGB(32, 32, 32));
+							/*bombBrush = CreateSolidBrush(RGB(192, 192, 192));	
+							bombPen = CreatePen(BS_SOLID, 4, RGB(32, 32, 32));*/
 							SelectObject(hdc, bombPen);
 							SelectObject(hdc, bombBrush);
 
@@ -353,10 +371,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 								arena.left + blockSide * i + blockSide - 40,
 								arena.top + blockSide * j + blockSide - 40);
 
-							SelectObject(hdc, standartPen);
+							/*SelectObject(hdc, standartPen);
 							DeleteObject(bombPen);
 							SelectObject(hdc, standartBrush);
-							DeleteObject(bombBrush);
+							DeleteObject(bombBrush);*/
 						}
 
 						else if (arenaGround[i][j] > 0) {//draw count of bombs around
@@ -378,8 +396,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							DrawText(hdc,
 								std::wstring(countOfBombs.begin(), countOfBombs.end()).c_str(), //convert str to lpcwstr
 								1, &currentBlock, DT_CENTER);
-							SelectObject(hdc, standartFont);
-							DeleteObject(numbersFont);
+							/*SelectObject(hdc, standartFont);
+							DeleteObject(numbersFont);*/
 						}
 
 					}
@@ -399,6 +417,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				SelectObject(hdc, standartFont);
 				DeleteObject(numbersFont);
 			}
+
+			DeleteObject(grassPen);
+			DeleteObject(grassBrush);
+			DeleteObject(grassPen1);
+			DeleteObject(grassBrush1);
+			DeleteObject(groundBrush);
+			DeleteObject(groundPen); 
+			DeleteObject(groundBrush1);
+			DeleteObject(groundPen1); 
+			DeleteObject(bombPen);
+			DeleteObject(bombBrush); 
 
 		EndPaint(hWnd, &lp);	
 		break;
