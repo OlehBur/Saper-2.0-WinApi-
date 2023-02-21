@@ -12,7 +12,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, PSTR, int cmdShow) {
 	saperWnd.lpfnWndProc = WndProc;
 	saperWnd.style = CS_BYTEALIGNWINDOW;// - dont need
 	saperWnd.hIcon = NULL;// LoadIcon(NULL, NULL);
-	saperWnd.hCursor = LoadCursor(hInst, MAKEINTRESOURCE(IDC_SHOVEL_CURSOR));
+	saperWnd.hCursor = NULL;
 	saperWnd.lpszMenuName = NULL;
 	saperWnd.cbClsExtra = 0;		//-dont need
 	saperWnd.cbWndExtra = 0;
@@ -57,17 +57,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 	HBRUSH standartBrush, grassBrush, groundBrush, grassBrush1, groundBrush1, bombBrush, mainBackgrounfBrush;
 	HPEN standartPen, grassPen, groundPen, grassPen1, groundPen1, bombPen;
-	HFONT standartFont, numbersFont, gameInfoFont;
+	HFONT standartFont, numbersFont, gameInfoFont, flagsCountFont;
 
-	static RECT currentBlock, scoreRect, timeRect, startTextRect, infoIconsRect/*heartBarRect*/, flagRect, soundRect;
+	static RECT currentBlock, scoreRect, timeRect, startTextRect, infoIconsRect/*heartBarRect*/, flagRect, flagsCountRect, soundRect;
 	static int blockSide{ 0 },
 		wndWidth{ 0 }, wndHeight{ 0 },
 		heartCentering{ 0 };
-    static std::string scoreStr, timeStr;
+    static std::string scoreStr, timeStr, flagsCountStr;
 
 	switch (message) {
 	case WM_CREATE:
 		WndMenu(hWnd);
+
+		srand(time(NULL));//for random random
 
 		heartBmp = (HBITMAP)LoadImage(NULL, L"assets/bmp/heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 		flagBmp = (HBITMAP)LoadImage(NULL, L"assets/bmp/flag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
@@ -95,20 +97,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, SettingsDialog);
 			if (firstStart) {
 				blockSide = wndHeight / (sidesArena[levelOfGame][1] + 2); // - wndHeight / 1.15;
+
 				arena.right = wndWidth - (wndWidth - blockSide * sidesArena[levelOfGame][0]) / 2;
 				arena.bottom = blockSide + blockSide * sidesArena[levelOfGame][1];
 				arena.left = (wndWidth - blockSide * sidesArena[levelOfGame][0]) / 2;
 				arena.top = blockSide;
 
 				scoreRect.left = arena.left;
-				scoreRect.right = arena.left + blockSide * 1.5;
-				scoreRect.top = arena.top / 3;
-				scoreRect.bottom = 2 * arena.top / 3; //2:3 size
+				scoreRect.right = arena.left + blockSide * levelOfGame * 2;
+				scoreRect.top = arena.top / 2 - blockSide / 3;
+				scoreRect.bottom = arena.top / 2 + blockSide / 3; //2:3 size  blockSide /1.5,
 
-				timeRect.left = arena.right - blockSide * 1.5;
+				timeRect.left = arena.right - blockSide * levelOfGame * 2;
 				timeRect.right = arena.right;
-				timeRect.top = arena.top / 3;
-				timeRect.bottom = 2 * arena.top / 3;
+				timeRect.top = arena.top / 2 - blockSide / 3;
+				timeRect.bottom = arena.top / 2 + blockSide / 3;
 
 				startTextRect.left = arena.left;
 				startTextRect.right = arena.right;
@@ -122,8 +125,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 				soundRect.left = wndWidth / 2 + bitmap.bmWidth * 3;
 				soundRect.top = arena.top / 2 - bitmap.bmHeight / 2;
-				soundRect.right = bitmap.bmWidth;
-				soundRect.bottom = bitmap.bmHeight;
+				soundRect.right = wndWidth / 2 + bitmap.bmWidth * 4;
+				soundRect.bottom = soundRect.top + bitmap.bmHeight;
+
+				flagsCountRect.left = infoIconsRect.left + bitmap.bmWidth / 2;
+				flagsCountRect.top = infoIconsRect.top + bitmap.bmHeight / 1.8;
+				flagsCountRect.right = infoIconsRect.left + bitmap.bmWidth*1.2;
+				flagsCountRect.bottom = infoIconsRect.bottom;
 
 				InvalidateRect(hWnd, NULL, true);
 			}
@@ -134,32 +142,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 
+	case WM_MOUSEMOVE:
+		SetCursor(LoadCursor(hInst, MAKEINTRESOURCE(saperCursors[isFlagsMode])));
+		break;
+
+	case WM_RBUTTONDOWN:
+		if(!firstStart)
+			isFlagsMode = !isFlagsMode;
+		SetCursor(LoadCursor(hInst, MAKEINTRESOURCE(saperCursors[isFlagsMode])));
+		break;
+
 	case WM_LBUTTONDOWN:
 		GetCursorPos(&cursorPosition);
 		cursorPosition.y -= GetSystemMetrics(SM_CYCAPTION); //because Getcurs return po on screen, but not on client rect
 		if (IsPointInRect(cursorPosition, arena)) {
 			if (firstStart) {
+				currentFlagsCount = levelOfGame * 3;
 				currentRemainingLifes = levelOfGame;//hearts max count
 				GenerateBombs(cursorPosition, blockSide);
 				CalculateNumberBlocks();
 				firstStart = false;
 				SetTimer(hWnd, 1, 1000, NULL);
 			}
-			//air digg
-		//currentBlockRect = GetRectOfClickedBlock(cursorPosition, blockSide);
-			DiggingGrassToCoords(cursorPosition, blockSide);
-			if (currentRemainingLifes == 0) {
-				KillTimer(hWnd, 1);
-				InvalidateRect(hWnd, &arena, true);
-				InvalidateRect(hWnd, &infoIconsRect, true);//for crack last heart
-				DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hWnd, GameOverDialog);
+			if (!isFlagsMode) {
+				DiggingGrassToCoords(cursorPosition, blockSide);
+				if (currentRemainingLifes == 0) {
+					KillTimer(hWnd, 1);
+					InvalidateRect(hWnd, &arena, true);
+					InvalidateRect(hWnd, &infoIconsRect, true);//for crack last heart
+					DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hWnd, GameOverDialog);
+					InvalidateRect(hWnd, &timeRect, true); //reset timer for new game during Start text
+				}
 			}
-			//if (!firstStart) {
-				InvalidateRect(hWnd, &arena, true); //InvalidateRect(hWnd, &currentBlockRect, false);
-				InvalidateRect(hWnd, &scoreRect, true);
-				InvalidateRect(hWnd, &infoIconsRect, true);
-			//}
-			//InvalidateRect(hWnd, NULL, true);
+			else {
+				MarkFlag(cursorPosition, blockSide);
+				InvalidateRect(hWnd, &flagRect, true);//redraw count of current flags
+			}
+			InvalidateRect(hWnd, &infoIconsRect, true);
+			InvalidateRect(hWnd, &arena, true);
+			InvalidateRect(hWnd, &scoreRect, true);
 		}
 
 		if (IsPointInRect(cursorPosition, soundRect)) {
@@ -181,14 +202,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		arena.top = blockSide;
 
 		scoreRect.left = arena.left;
-		scoreRect.right = arena.left + blockSide * 1.5;
-		scoreRect.top = arena.top / 3;
-		scoreRect.bottom = 2 * arena.top / 3; //2:3 size
+		scoreRect.right = arena.left + blockSide * levelOfGame * 2;
+		scoreRect.top = arena.top / 2 - blockSide / 3;
+		scoreRect.bottom = arena.top / 2 + blockSide / 3; //2:3 size  blockSide /1.5,
 
-		timeRect.left = arena.right - blockSide * 1.5;
+		timeRect.left = arena.right - blockSide * levelOfGame * 2;
 		timeRect.right = arena.right;
-		timeRect.top = arena.top / 3;
-		timeRect.bottom = 2 * arena.top / 3;
+		timeRect.top = arena.top / 2 - blockSide / 3;
+		timeRect.bottom = arena.top / 2 + blockSide / 3;
 
 		startTextRect.left = arena.left;
 		startTextRect.right = arena.right;
@@ -202,8 +223,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		soundRect.left = wndWidth / 2 + bitmap.bmWidth * 3;
 		soundRect.top = arena.top / 2 - bitmap.bmHeight / 2;
-		soundRect.right = bitmap.bmWidth;
-		soundRect.bottom = bitmap.bmHeight;
+		soundRect.right = wndWidth / 2 + bitmap.bmWidth * 4;
+		soundRect.bottom = soundRect.top + bitmap.bmHeight;
+
+		flagsCountRect.left = infoIconsRect.left + bitmap.bmWidth / 2;
+		flagsCountRect.top = infoIconsRect.top + bitmap.bmHeight / 1.8;
+		flagsCountRect.right = infoIconsRect.left + bitmap.bmWidth*1.2;
+		flagsCountRect.bottom = infoIconsRect.bottom;
 
 		break;
 
@@ -213,16 +239,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 					//info
 		scoreStr = "Score: " + std::to_string(currentScore);
 		timeStr = "Time: " + std::to_string(currentTime);
+		flagsCountStr = "x" + std::to_string(currentFlagsCount);
 
-		gameInfoFont = CreateFont(blockSide / 3, blockSide / 8, 0, 0, FW_DONTCARE,
+		gameInfoFont = CreateFont(blockSide /1.5, blockSide / 5, 0, 0, FW_DONTCARE,
 			0, 0, 0, ANSI_CHARSET,
 			OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
 			DRAFT_QUALITY, VARIABLE_PITCH,
 			TEXT("Comic Sans MS"));
-
-		standartFont = (HFONT)SelectObject(hdc, gameInfoFont);
-		standartPen = (HPEN)GetStockObject(WHITE_BRUSH);
-		standartBrush = (HBRUSH)GetStockObject(DC_PEN);
+		flagsCountFont = CreateFont(bitmap.bmHeight / 2, bitmap.bmWidth / 3.8, 0, 0, FW_DONTCARE,
+			0, 0, 0, ANSI_CHARSET,
+			OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
+			DRAFT_QUALITY, VARIABLE_PITCH,
+			TEXT("Comic Sans MS"));
 
 		SelectObject(hdc, gameInfoFont);
 		SetTextColor(hdc, RGB(0, 0, 0));
@@ -233,12 +261,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		DrawText(hdc, std::wstring(timeStr.begin(), timeStr.end()).c_str(),
 			timeStr.length(), &timeRect, DT_RIGHT);
 
-		SelectObject(hdc, standartFont);
 		DeleteObject(gameInfoFont);
+		
 
 						//bmp`s
-			
-			//memBit = CreateCompatibleDC(hdc);
 			if (!firstStart) {
 				mainBackgrounfBrush = CreateSolidBrush(RGB(0, 153, 0));
 				SelectObject(hdc, mainBackgrounfBrush);
@@ -248,7 +274,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 						heartBmp = (i <= (levelOfGame - currentRemainingLifes)) ? //which heart crack
 							(HBITMAP)LoadImage(NULL, L"assets/bmp/lost_heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION) :
 							(HBITMAP)LoadImage(NULL, L"assets/bmp/heart.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-
 
 						SelectObject(memBit, heartBmp);
 						heartCentering = (levelOfGame == 3) ? bitmap.bmWidth * 1.5 : (levelOfGame == 2) ? bitmap.bmWidth : bitmap.bmWidth * .5/*(levelOfGame==1)?*/;
@@ -267,6 +292,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				flagBmp = (flagsOn) ?
 					(HBITMAP)LoadImage(NULL, L"assets/bmp/flag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION) :
 					(HBITMAP)LoadImage(NULL, L"assets/bmp/unflag.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+
 				SelectObject(memBit, flagBmp);
 				BitBlt(hdc,
 					wndWidth / 2 - bitmap.bmWidth * 4,
@@ -274,6 +300,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 					bitmap.bmWidth,
 					bitmap.bmHeight,
 					memBit, 0, 0, MERGECOPY);
+				FillRect(hdc, &flagsCountRect, (HBRUSH)RGB(90, 1, 33));
+				//count of fkags
+				SelectObject(hdc, flagsCountFont);
+				DrawText(hdc, std::wstring(flagsCountStr.begin(), flagsCountStr.end()).c_str(),
+					flagsCountStr.length(), &flagsCountRect, DT_LEFT);
+				DeleteObject(flagsCountFont);
 				
 				//Sound Bar
 				soundBmp = (soundOn) ?
@@ -291,9 +323,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				DeleteObject(soundBmp);
 				DeleteObject(mainBackgrounfBrush);
 			}
-			//DeleteObject(memBit);
-			SelectObject(hdc, standartBrush);
-			
 
 					//arena draw
 			Rectangle(hdc, arena.left, arena.top, arena.right, arena.bottom);
@@ -311,13 +340,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			for (int i = 0; i < sidesArena[levelOfGame][0]; i++)
 				for (int j = 0; j < sidesArena[levelOfGame][1]; j++) {
-					//if ((i + j) & 1) {//is even numb
-						
-					//}
-					/*else {
-					}*/
-
-					if (arenaGrass[i][j]) {//grass
+							//grass
+					if (arenaGrass[i][j]) {
 						if ((i + j) & 1) {
 							SelectObject(hdc, grassPen);
 							SelectObject(hdc, grassBrush);
@@ -332,11 +356,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							arena.top + blockSide * j,
 							arena.left + blockSide * i + blockSide,
 							arena.top + blockSide * j + blockSide);
-
-						//SelectObject(hdc, standartPen);
-						//DeleteObject(grassPen);
-						//SelectObject(hdc, standartBrush);
-						//DeleteObject(grassBrush);
+						//flags
+						if (arenaFlags[i][j])
+							DrawFlag(hdc,
+								RECT{ arena.left + blockSide * i,
+								arena.top + blockSide * j,
+								arena.left + blockSide * i + blockSide,
+								arena.top + blockSide * j + blockSide });
 					}
 				else {
 						//ground
@@ -348,20 +374,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							SelectObject(hdc, groundPen1);
 							SelectObject(hdc, groundBrush1);
 						}
-
 						Rectangle(hdc, arena.left + blockSide * i,
 							arena.top + blockSide * j,
 							arena.left + blockSide * i + blockSide,
 							arena.top + blockSide * j + blockSide);
 
-						/*SelectObject(hdc, standartBrush);
-						DeleteObject(groundBrush);
-						SelectObject(hdc, standartPen);
-						DeleteObject(groundPen);*/
-
+								//bomb
 						if (arenaGround[i][j] == 10) {
-							/*bombBrush = CreateSolidBrush(RGB(192, 192, 192));	
-							bombPen = CreatePen(BS_SOLID, 4, RGB(32, 32, 32));*/
 							SelectObject(hdc, bombPen);
 							SelectObject(hdc, bombBrush);
 
@@ -370,14 +389,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 								arena.top + blockSide * j + 40,
 								arena.left + blockSide * i + blockSide - 40,
 								arena.top + blockSide * j + blockSide - 40);
-
-							/*SelectObject(hdc, standartPen);
-							DeleteObject(bombPen);
-							SelectObject(hdc, standartBrush);
-							DeleteObject(bombBrush);*/
 						}
-
-						else if (arenaGround[i][j] > 0) {//draw count of bombs around
+							//draw count of bombs around
+						else if (arenaGround[i][j] > 0) {
 							numbersFont = CreateFont(blockSide / .9, blockSide / 2.5, 0, 0, FW_DONTCARE,
 								0, 0, 0, ANSI_CHARSET,
 								OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -396,13 +410,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							DrawText(hdc,
 								std::wstring(countOfBombs.begin(), countOfBombs.end()).c_str(), //convert str to lpcwstr
 								1, &currentBlock, DT_CENTER);
-							/*SelectObject(hdc, standartFont);
-							DeleteObject(numbersFont);*/
 						}
-
 					}
 				}
-
+					//start text on arena
 			if (firstStart) {
 				numbersFont = CreateFont(blockSide / .9, blockSide / 2.5, 0, 0, FW_DONTCARE,
 					0, 0, 0, ANSI_CHARSET,
@@ -414,7 +425,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				SetTextColor(hdc, RGB(0, 0, 0));
 				DrawText(hdc, TEXT("Click on the arena to start."),
 					29, &startTextRect, DT_CENTER);
-				SelectObject(hdc, standartFont);
+
 				DeleteObject(numbersFont);
 			}
 
@@ -495,13 +506,6 @@ INT_PTR CALLBACK SettingsDialog(HWND hWndDlg, UINT messageDlg, WPARAM wParam, LP
 		}
 
 		break;
-	//case WM_CTLCOLORDLG:
-	//	return (INT_PTR)CreateSolidBrush(RGB(0, 255, 0));
-	//	break;
-	//case WM_DESTROY:
-
-	//	break;
-
 	}
 	return INT_PTR(false);
 }
@@ -526,9 +530,6 @@ INT_PTR CALLBACK GameOverDialog(HWND hWndGO, UINT message, WPARAM wParam, LPARAM
 
 		GetClientRect(hWndGO, &dialogRect);
 
-		/*widthDlg = dialogRect.right - dialogRect.left;
-		heightDlg = dialogRect.bottom - dialogRect.top;*/
-
 		tittleRect.left = 10;
 		tittleRect.right = dialogRect.right -10;
 		tittleRect.top = 30;
@@ -539,7 +540,6 @@ INT_PTR CALLBACK GameOverDialog(HWND hWndGO, UINT message, WPARAM wParam, LPARAM
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDOK:
-			//isArenaReload = true;
 			RestartGame();
 			EndDialog(hWndGO, LOWORD(wParam));
 			break;
@@ -549,7 +549,7 @@ INT_PTR CALLBACK GameOverDialog(HWND hWndGO, UINT message, WPARAM wParam, LPARAM
 		}
 			break;
 	case WM_CTLCOLORDLG:
-		return (INT_PTR)background;//CreateSolidBrush(RGB(0, 255, 0));
+		return (INT_PTR)background;
 		break;
 
 	case WM_PAINT:
@@ -613,7 +613,7 @@ POINT GetIndexGrassBlockClicked(POINT point, int side) {
 void DiggingGrassToCoords(POINT point, int side) {
 	int i = GetIndexGrassBlockClicked(point, side).x,
 		j = GetIndexGrassBlockClicked(point, side).y;
-	if (i >= 0 && j >= 0 && arenaGrass[i][j]) {
+	if (i >= 0 && j >= 0 && arenaGrass[i][j] && !arenaFlags[i][j]) {
 		arenaGrass[i][j] = false;
 
 		switch (arenaGround[i][j]) {
@@ -631,6 +631,23 @@ void DiggingGrassToCoords(POINT point, int side) {
 
 	}
 }
+
+void MarkFlag(POINT point, int side) {
+	if (!firstStart && flagsOn) {
+		int i = GetIndexGrassBlockClicked(point, side).x,
+			j = GetIndexGrassBlockClicked(point, side).y;
+		if (/*i >= 0 && j >= 0 &&*/ arenaGrass[i][j] /*&& currentFlagsCount*/)
+			if (!arenaFlags[i][j] && currentFlagsCount) {
+				arenaFlags[i][j] = true;
+				currentFlagsCount--;
+				currentScore--;
+			}
+			else if (arenaFlags[i][j]) {
+				arenaFlags[i][j] = false;
+				currentFlagsCount++;
+			}
+	}
+};
 
 void DiggingVoidArea(int i, int j) {
 	for (int k = i - 1; k <= i + 1; k++)
@@ -676,23 +693,59 @@ void CalculateNumberBlocks() {
 void RestartGame() {
 	currentScore = 0;
 	currentTime = 0;
+	currentFlagsCount = levelOfGame * 3;
 	currentRemainingLifes = levelOfGame;
-	firstStart = true;
-	//isArenaReload = false;
+	firstStart = true; 
+	isFlagsMode = false;
 
-	for (int i = 0; i < arenaGrass.size()-1/*sidesArena[levelOfGame][1]*/; i++) {
+	for (int i = 0; i < arenaGrass.size()-1; i++) {
 		arenaGrass.at(i).clear();
 		arenaGround.at(i).clear();
+		arenaFlags.at(i).clear();
 	}
 	arenaGrass.clear();
 	arenaGround.clear();
+	arenaFlags.clear();
 
 	for (int i = 0; i < sidesArena[levelOfGame][0]; i++) {
-		arenaGrass.push_back(/*at(i)*/ std::vector <bool>(sidesArena[levelOfGame][1], true));
-		arenaGround.push_back(/*at(i)*/ std::vector <int>(sidesArena[levelOfGame][1], 0));
+		arenaGrass.push_back(std::vector <bool>(sidesArena[levelOfGame][1], true));
+		arenaGround.push_back(std::vector <int>(sidesArena[levelOfGame][1], 0));
+		arenaFlags.push_back(std::vector <bool>(sidesArena[levelOfGame][1], false));
 	}
-		/*for (int j = 0; j < rowsArena; j++) {
-			arenaGrass[i][j] = true;
-			arenaGround[i][j] = 0;
-		}*/
 }
+
+void DrawFlag(HDC hdc, RECT currentBlock) {
+	HPEN flagPen = CreatePen(BS_SOLID, 4, RGB(204, 0, 0));
+	HBRUSH flagBrush = CreateSolidBrush(RGB(255, 0, 0));
+	int widthBlock = currentBlock.right - currentBlock.left,
+		heightBlock = currentBlock.bottom - currentBlock.top;
+	POINT triangleVertices[3] = {
+		POINT{currentBlock.left + widthBlock / 3 +2,currentBlock.top + heightBlock / 7 +3},
+		POINT{currentBlock.right - widthBlock / 3 -3, long(currentBlock.top + heightBlock * 2.5 / 7)},
+		POINT{currentBlock.left + widthBlock / 3 +2, currentBlock.top + heightBlock * 4 / 7 -3}
+	};
+	HRGN flagTriangle = CreatePolygonRgn(triangleVertices, 3, ALTERNATE);
+
+	SelectObject(hdc, flagPen);
+	SelectObject(hdc, flagBrush);
+
+	MoveToEx(hdc,
+		currentBlock.left + widthBlock / 3,
+		currentBlock.top + heightBlock - heightBlock / 7, 
+		NULL);
+	LineTo(hdc,
+		currentBlock.left + widthBlock / 3,
+		currentBlock.top + heightBlock / 7);
+	LineTo(hdc,
+		currentBlock.right - widthBlock / 3,
+		currentBlock.top + heightBlock * 2.5 / 7);
+	LineTo(hdc,
+		currentBlock.left + widthBlock / 3,
+		currentBlock.top + heightBlock * 4 / 7);
+	FillRgn(hdc, flagTriangle, flagBrush);
+
+	DeleteObject(flagPen);
+	DeleteObject(flagBrush);
+
+
+};
