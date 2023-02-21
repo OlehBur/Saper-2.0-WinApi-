@@ -336,7 +336,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			groundBrush1 = CreateSolidBrush(RGB(255, 178, 153));
 			groundPen1 = CreatePen(BS_SOLID, 1, RGB(255, 178, 153));
 			bombBrush = CreateSolidBrush(RGB(192, 192, 192));
-			bombPen = CreatePen(BS_SOLID, 4, RGB(32, 32, 32));
+			bombPen = CreatePen(BS_SOLID, 5-levelOfGame, RGB(32, 32, 32));
 
 			for (int i = 0; i < sidesArena[levelOfGame][0]; i++)
 				for (int j = 0; j < sidesArena[levelOfGame][1]; j++) {
@@ -385,10 +385,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							SelectObject(hdc, bombBrush);
 
 							Ellipse(hdc,
-								arena.left + blockSide * i + 40,
-								arena.top + blockSide * j + 40,
-								arena.left + blockSide * i + blockSide - 40,
-								arena.top + blockSide * j + blockSide - 40);
+								arena.left + blockSide * i + blockSide / 4,
+								arena.top + blockSide * j + blockSide / 4,
+								arena.left + blockSide * i + blockSide - blockSide / 4,
+								arena.top + blockSide * j + blockSide - blockSide / 4);
 						}
 							//draw count of bombs around
 						else if (arenaGround[i][j] > 0) {
@@ -715,14 +715,15 @@ void RestartGame() {
 }
 
 void DrawFlag(HDC hdc, RECT currentBlock) {
-	HPEN flagPen = CreatePen(BS_SOLID, 4, RGB(204, 0, 0));
+	HPEN flagPen = CreatePen(BS_SOLID, 5-levelOfGame, RGB(204, 0, 0));
 	HBRUSH flagBrush = CreateSolidBrush(RGB(255, 0, 0));
 	int widthBlock = currentBlock.right - currentBlock.left,
-		heightBlock = currentBlock.bottom - currentBlock.top;
+		heightBlock = currentBlock.bottom - currentBlock.top,
+		border = (4-levelOfGame)/2;
 	POINT triangleVertices[3] = {
-		POINT{currentBlock.left + widthBlock / 3 +2,currentBlock.top + heightBlock / 7 +3},
-		POINT{currentBlock.right - widthBlock / 3 -3, long(currentBlock.top + heightBlock * 2.5 / 7)},
-		POINT{currentBlock.left + widthBlock / 3 +2, currentBlock.top + heightBlock * 4 / 7 -3}
+		POINT{currentBlock.left + widthBlock / 3+ border,currentBlock.top + heightBlock / 7+ border},
+		POINT{currentBlock.right - widthBlock / 3- border, long(currentBlock.top + heightBlock * 2.5 / 7)},
+		POINT{currentBlock.left + widthBlock / 3+ border, currentBlock.top + heightBlock * 4 / 7- border}
 	};
 	HRGN flagTriangle = CreatePolygonRgn(triangleVertices, 3, ALTERNATE);
 
