@@ -173,6 +173,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 					DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hWnd, GameOverDialog);
 					InvalidateRect(hWnd, &timeRect, true); //reset timer for new game during Start text
 				}
+				else if (minedBlocksCount == sidesArena[levelOfGame][0] * sidesArena[levelOfGame][1] - arenaBombsCount) {
+					KillTimer(hWnd, 1);
+					InvalidateRect(hWnd, &arena, true);
+					InvalidateRect(hWnd, &infoIconsRect, true);
+					DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hWnd, GameOverDialog);
+					InvalidateRect(hWnd, &timeRect, true);
+				}
+
 			}
 			else {
 				MarkFlag(cursorPosition, blockSide);
@@ -615,17 +623,24 @@ void DiggingGrassToCoords(POINT point, int side) {
 		j = GetIndexGrassBlockClicked(point, side).y;
 	if (i >= 0 && j >= 0 && arenaGrass[i][j] && !arenaFlags[i][j]) {
 		arenaGrass[i][j] = false;
-
 		switch (arenaGround[i][j]) {
 		case 10:
+			if(soundOn)
+				PlaySound(L"assets/audio/Bomb.wav", 0, SND_FILENAME | SND_ASYNC);
 			(extraLifesOn)?
 				currentRemainingLifes--:
 				currentRemainingLifes = 0;
 			break;
 		case 0:
+			minedBlocksCount++;
+			if (soundOn)
+				PlaySound(L"assets/audio/MultipleDigging.wav", 0, SND_FILENAME | SND_ASYNC);
 			DiggingVoidArea(i, j);
 			break;
 		default://if it`s number block
+			minedBlocksCount++;
+			if (soundOn)
+				PlaySound(L"assets/audio/Digging.wav", 0, SND_FILENAME | SND_ASYNC);
 			currentScore += arenaGround[i][j];
 		}
 
@@ -638,6 +653,8 @@ void MarkFlag(POINT point, int side) {
 			j = GetIndexGrassBlockClicked(point, side).y;
 		if (/*i >= 0 && j >= 0 &&*/ arenaGrass[i][j] /*&& currentFlagsCount*/)
 			if (!arenaFlags[i][j] && currentFlagsCount) {
+				if (soundOn)
+					PlaySound(L"assets/audio/SetFlag.wav", 0, SND_FILENAME | SND_ASYNC);
 				arenaFlags[i][j] = true;
 				currentFlagsCount--;
 				currentScore--;
@@ -645,6 +662,8 @@ void MarkFlag(POINT point, int side) {
 			else if (arenaFlags[i][j]) {
 				arenaFlags[i][j] = false;
 				currentFlagsCount++;
+				if (soundOn)
+					PlaySound(L"assets/audio/SetFlag.wav", 0, SND_FILENAME | SND_ASYNC);
 			}
 	}
 };
@@ -657,9 +676,11 @@ void DiggingVoidArea(int i, int j) {
 					if (arenaGround[k][l] != 0 && arenaGround[k][l] != 10) {
 						currentScore += arenaGround[k][l];
 						arenaGrass[k][l] = false;
-					}
+						minedBlocksCount++;
+						}
 					else if (arenaGround[k][l] != 10) {
 						arenaGrass[k][l] = false;
+						minedBlocksCount++;
 						DiggingVoidArea(k, l);
 					}
 }
@@ -670,13 +691,17 @@ void GenerateBombs(POINT point, int side) {
 
 	for (int i = 0; i < sidesArena[levelOfGame][0]; i++)
 		for (int j = 0; j < sidesArena[levelOfGame][1]; j++)
-			if (rand() % int(6-levelOfGame*1.1) == 0)
+			if (rand() % 5/*int(6 - levelOfGame * 1.1)*/ == 0) {
 				arenaGround[i][j] = 10;
-
+				arenaBombsCount++;
+			}
 	for (int k = col - 1; k <= col + 1; k++)//start void area
 		for (int l = row - 1; l <= row + 1; l++)
-			if (k >= 0 && l >= 0 && k < sidesArena[levelOfGame][0] && l < sidesArena[levelOfGame][1])
+			if (k >= 0 && l >= 0 && k < sidesArena[levelOfGame][0] && l < sidesArena[levelOfGame][1]) {
+				if (arenaGround[k][l] == 10)
+					arenaBombsCount--;
 				arenaGround[k][l] = 0;
+			}
 }
 
 void CalculateNumberBlocks() {
@@ -693,6 +718,8 @@ void CalculateNumberBlocks() {
 void RestartGame() {
 	currentScore = 0;
 	currentTime = 0;
+	arenaBombsCount = 0;
+	minedBlocksCount = 0;
 	currentFlagsCount = levelOfGame * 3;
 	currentRemainingLifes = levelOfGame;
 	firstStart = true; 

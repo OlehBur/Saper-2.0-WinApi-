@@ -19,6 +19,9 @@
     <Filter Include="Resource Files\cursors">
       <UniqueIdentifier>{62d8b80b-1ce2-4b04-81fa-a7c9d6aa8b61}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\audio">
+      <UniqueIdentifier>{3a3e86a6-4d4a-4f67-8459-8c34a3b45525}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -65,5 +68,19 @@
     <Image Include="unflag.bmp">
       <Filter>Resource Files\bmp</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="assets\audio\Bomb.wav">
+      <Filter>Resource Files\audio</Filter>
+    </Media>
+    <Media Include="assets\audio\Digging.wav">
+      <Filter>Resource Files\audio</Filter>
+    </Media>
+    <Media Include="assets\audio\SetFlag.wav">
+      <Filter>Resource Files\audio</Filter>
+    </Media>
+    <Media Include="assets\audio\MultipleDigging.wav">
+      <Filter>Resource Files\audio</Filter>
+    </Media>
   </ItemGroup>
 </Project>

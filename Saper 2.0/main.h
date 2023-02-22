@@ -6,6 +6,8 @@
 #include <time.h>
 #include "resource.h"
 
+#pragma comment(lib,"Winmm.lib")
+
 #define settingsMenuCode 0
 #define exitMenuCode 1
 
@@ -14,8 +16,10 @@ int saperCursors[2] = { IDC_SHOVEL_CURSOR, IDC_FLAG_CURSOR };
 int levelOfGame = 1,
 currentScore = 0,
 currentTime = 0,
-currentRemainingLifes = 0, 
-currentFlagsCount = 0;
+currentRemainingLifes = 0,
+currentFlagsCount = 0,
+arenaBombsCount = 0,
+minedBlocksCount = 0;
 bool firstStart = true,
 soundOn = true,
 extraLifesOn = true,
@@ -37,8 +41,8 @@ void MarkFlag(POINT, int);
 void GenerateBombs(POINT, int);
 void CalculateNumberBlocks();
 void DiggingVoidArea(int, int);
-void RestartGame();
 void DrawFlag(HDC, RECT);
+void RestartGame();
 
 void WndMenu(HWND);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);

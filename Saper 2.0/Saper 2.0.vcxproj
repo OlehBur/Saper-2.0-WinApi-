@@ -160,6 +160,12 @@
     <Image Include="assets\bmp\lost_heart.bmp" />
     <Image Include="unflag.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="assets\audio\Bomb.wav" />
+    <Media Include="assets\audio\Digging.wav" />
+    <Media Include="assets\audio\MultipleDigging.wav" />
+    <Media Include="assets\audio\SetFlag.wav" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
